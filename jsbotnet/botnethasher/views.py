@@ -64,7 +64,7 @@ def api_check_news(request, client_uuid):
             serialized_client = ClientSerializer(client)
             return Response({
                 'hash': serialized_hash.data,
-                'client': serialized_client.data
+                # 'client': serialized_client.data
             })
 
 

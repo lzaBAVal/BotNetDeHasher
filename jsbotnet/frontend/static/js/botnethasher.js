@@ -4,17 +4,17 @@ function sleep(ms) {
 
 class BNDH {
     // Max amount instances BNDH
-    static #max_client = 1
+    static #max_client = 1;
     // Amount instances BNDH
-    static #instances = 0
+    static #instances = 0;
     // Количество тасков, которое должно быть на стороне клиента
-    static max_amount_tasks_for_work
+    static max_amount_tasks_for_work = 80;
     // Интервал времени через которое нужно отправлять alive пакет
-    static alive_time
+    static alive_time = 120 * 1000;
     // Интервал времени проверки количества тасков в пуле
-    static pull_check
+    static pull_check = 60 * 1000;
     // Интервал времени проверки общей информации
-    static general_info_check
+    static general_info_check = 60 * 1000;
 
     #uid
     #alphabet
@@ -32,10 +32,6 @@ class BNDH {
         if (BNDH._instances > BNDH.#max_client) {
             throw new Error('You can\'t create more than 1 instance')
         }
-        this.max_amount_tasks_for_work = 80;
-        this.alive_time = 120 * 1000;
-        this.pull_check = 60 * 1000;
-        this.general_info_check = 60 * 1000;
         this.#uid = '';
         this.#alphabet = '';
         this.#tasks = [];
@@ -80,21 +76,6 @@ class BNDH {
         return '/api/v1/bndh/user/' + this.#uid + '/' + url
     }
 
-    getNewGoal() {
-        $.ajax({
-            type: "GET",
-            url: this.formUrl("check-health"),
-        }).done(function (data) {
-            if (data['status'] === '200') {
-                this.#goal = data['hash'];
-                this.#alphabet = data['alphabet'];
-                this.#amount_tasks = data['amount_tasks'];
-            } else {
-                console.log('getNewGoal(): Чёт мастер не хочет работать с тобой')
-            }
-        });
-    }
-
     sendMessageToMaster(url, get=true, data=null, raw_url=false) {
         if (!raw_url) {
             url = this.formUrl(url)
@@ -122,18 +103,31 @@ class BNDH {
     }
 
     connectToMaster() {
-        this.sendMessageToMaster("api/v1/bndh/guest/hello", raw_url=true).then((data) => {
-            this.#uid = data['uuid'];
-            this.#last_check_health = data['date_create'];
-            this.#datetime_start = data['date_create'];
+        return new Promise((resolve, reject) => {
+            this.sendMessageToMaster("api/v1/bndh/guest/hello", true, null, true).then((data) => {
+                this.#uid = data['uuid'];
+                this.#last_check_health = data['date_create'];
+                this.#datetime_start = data['date_create'];
+                resolve(true)
+            })
         })
     }
 
     // Я жив
     sendCheckHealth() {
-        console.log(this)
         this.sendMessageToMaster("check-health").then((data) => {
             this.date_check = data['date_check']
+        })
+    }
+
+    getNewGoal() {
+        return new Promise((resolve, reject) => {
+            this.sendMessageToMaster("get-hash").then((data) => {
+            this.#goal = data['hash'];
+            this.#alphabet = data['alphabet'];
+            this.#amount_tasks = data['amount_tasks'];
+            resolve(true)
+            })
         })
     }
 
@@ -154,7 +148,7 @@ class BNDH {
     // Таск сделан
     async sendSolution(tasks) {
         data = { 'tasks': tasks }
-        this.sendMessageToMaster('send-info', get=false, data=data).then((data) => {
+        this.sendMessageToMaster('send-info', false, data).then((data) => {
             this.#amount_finished_personal_task = data['amount_finished_personal_task']
         })
     }
@@ -162,21 +156,21 @@ class BNDH {
     // Отправить решение
     async sendSolution(pass_str) {
         data = { 'pass_str': pass_str }
-        this.sendMessageToMaster('send-answer', get=false, data=data).then((data) => {
+        this.sendMessageToMaster('send-answer', false, data).then((data) => {
             alert('Поздавляю пароль найден');
         })
     }
 
     // Попросить еще тасков
     async getTasks(amount) {
-        data = { 'amount': amount }
-        this.sendMessageToMaster('get-tasks', data=data).then((data) => {
+        let data = { 'amount_tasks': amount }
+        this.sendMessageToMaster('get-tasks', true, data).then((data) => {
             this.#tasks.push(data['new_tasks'])
         })
     }
 
     async getGeneralInfo() {
-        this.sendMessageToMaster('general-info', data=data).then((data) => {
+        this.sendMessageToMaster('general-info').then((data) => {
             this.#alphabet = data['alphabet']
             this.#amount_tasks = data['amount_tasks']
             this.#goal = data['hash']
@@ -234,11 +228,11 @@ async function BNDHWorkManager() {
     // Work Manager
 
     client = new BNDH()
-    if (client && client.connectToMaster()) {
-        let check_health = setInterval(client.sendCheckHealth, BNDH.alive_time)
+    await client.connectToMaster().then(() => {
+        setInterval(function(){client.sendCheckHealth();}, BNDH.alive_time)
         setInterval(async function() {
-             if (client.getGoal() != null) {
-                if (client.getAmountTask() != 0) {
+             if (client.getGoal()) {
+                if (client.getAmountTask()) {
                     task = client.getFirstTask()
                     if (client.work(task)) {
                         client.addDoneTask(task)
@@ -251,19 +245,18 @@ async function BNDHWorkManager() {
                     await sleep(2000)
                 }
             } else {
-                client.getNewGoal()
-                if (client.getGoal() == null) {
-                    await sleep(10 * 1000)
-                } else {
-                    let check_work_pull = setInterval(client.checkPullTask, BNDH.pull_check)
-                    let check_hash_info = setInterval(client.checkGeneralInfo, BNDH.general_info_check)
-                }
+                await client.getNewGoal().then(() => {
+                    if (!client.getGoal()) {
+                        sleep(10 * 1000)
+                    } else {
+                        let check_work_pull = setInterval(function(){client.checkPullTask();}, 3000)
+                        let check_hash_info = setInterval(function(){client.checkGeneralInfo();}, BNDH.general_info_check)
+                    }
+                })
+
             }
-        }, 100)
-    }
-
-    
-
+        }, 1000)
+    })
 }
 
 

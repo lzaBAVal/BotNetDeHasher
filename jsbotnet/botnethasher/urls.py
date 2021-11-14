@@ -8,7 +8,7 @@ urlpatterns = [
     path('guest/hello', api_new_client),
 
     path('user/all', api_client),
-    path('user/<uuid:client_uuid>', api_check_news),
+    path('user/<uuid:client_uuid>/get-hash', api_check_news),
     path('user/<uuid:client_uuid>/detail', api_client_detail),
     path('user/<uuid:client_uuid>/get-tasks/<int:amount_tasks>', api_get_tasks),
     path('user/<uuid:client_uuid>/check-health', api_check_health),
