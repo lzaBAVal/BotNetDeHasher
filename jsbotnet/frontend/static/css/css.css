@@ -1,0 +1,54 @@
+@font-face {
+    font-family: MochiyPopPOne-Regular;
+    src: url(../fonts/MochiyPopPOne-Regular.ttf);
+    src: local(MochiyPopPOne-Regular), url(../fonts/MochiyPopPOne-Regular.ttf)
+}
+
+@font-face {
+    font-family: NuritoRegular;
+    src: local(NuritoRegular), url(../fonts/Nunito/Nunito-Regular.ttf);
+}
+
+@font-face {
+    font-family: NuritoExLight;
+    src: local(NuritoExLight), url(../fonts/Nunito/Nunito-ExtraLight.ttf);
+}
+
+@font-face {
+    font-family: NuritoBlack;
+    src: local(NuritoBlack), url(../fonts/Nunito/Nunito-Black.ttf);
+}
+
+* {
+    font-family: NuritoRegular;
+}
+
+.font-weight-bold {
+    font-weight: 700!important;
+}
+
+.border-left-primary {
+    border-left: 0.45rem solid #4e73df!important;
+}
+
+.border-left-success {
+    border-left: 0.45rem solid #1cc88a!important;
+}
+
+.border-left-warning {
+    border-left: 0.45rem solid #f6c23e!important;
+}
+
+.border-left-info {
+    border-left: 0.45rem solid #9966FF!important;
+}
+
+.card {
+    border-radius: 0.55rem !important;
+}
+
+.progress {
+    margin-bottom: 0 !important;
+    width: 100%;
+    z-index: 10;
+}
