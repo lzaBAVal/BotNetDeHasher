@@ -1,3 +1,4 @@
+# from .models import *
 from .models import *
 
 
@@ -14,19 +15,10 @@ def get_tasks(client, amount_tasks: int) -> list:
     return task_string_list
 
 
-def create_tasks(hash_id):
-    tasks = Task.objects.all().filter(hash_id=hash_id)
-    alphabet = Hash.objects.first().filter(id=hash_id)
+def create_tasks_list(alphabet='abcdefghijklmnopqrstuvwxyz0123456789!"#$%&\'()*+,-./:;<=>?@[\]^_`{|}~') -> list:
+    tasks = []
+    for symbol_1 in range(len(alphabet)):
+        for symbol_2 in range(symbol_1, len(alphabet)):
+            tasks.append(f'{alphabet[symbol_1]}{alphabet[symbol_2]}')
+    tasks = list(dict.fromkeys(tasks))
     return tasks
-    if not tasks:
-        amount_tasks = 5000
-        counter = 0
-        while counter < 5000:
-            counter += 1
-
-    else:
-        pass
-
-
-def generate_string():
-    pass

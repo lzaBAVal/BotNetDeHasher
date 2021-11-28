@@ -3,10 +3,14 @@ from django.db.transaction import atomic
 
 from rest_framework.response import Response
 from rest_framework.decorators import api_view
+from django.views.decorators.csrf import csrf_exempt
 from rest_framework import status
 from .models import Client, Task
-from .serializers import ClientSerializer, HashSerializer, ClientGeneralInfoSerializer
+from .serializers import ClientSerializer, HashSerializer, ClientGeneralInfoSerializer, TaskSerializer
 from .service import *
+
+import logging
+logger = logging.getLogger(__name__)
 
 
 @api_view(['GET', 'POST'])
@@ -52,7 +56,7 @@ def api_new_client(request):
 
 
 @api_view(['GET'])
-def api_check_news(request, client_uuid):
+def api_get_hash(request, client_uuid):
     client = Client.objects.get(uuid=client_uuid)
     if request.method == 'GET':
         if client.hash_id:
@@ -60,8 +64,8 @@ def api_check_news(request, client_uuid):
         else:
             hash = Hash.get_hash_for_work()
             client.hash_id = hash
+            client.save()
             serialized_hash = HashSerializer(hash)
-            serialized_client = ClientSerializer(client)
             return Response({
                 'hash': serialized_hash.data,
                 # 'client': serialized_client.data
@@ -72,11 +76,9 @@ def api_check_news(request, client_uuid):
 @api_view(['GET'])
 def api_get_tasks(request, client_uuid, amount_tasks):
     client = Client.objects.get(uuid=client_uuid)
-    if request.method == 'GET' and ClientSerializer(client):
-        tasks = get_tasks(client, amount_tasks)
-        if not tasks:
-            tasks = create_tasks(client.hash_id)
-        return Response({'tasks': tasks})
+    if request.method == 'GET':
+        tasks = client.get_tasks(amount_tasks)
+        return Response(TaskSerializer(tasks, many=True).data, status=status.HTTP_200_OK)
 
 
 @api_view(['GET'])
@@ -87,6 +89,24 @@ def api_check_health(request, client_uuid):
         if serializer.is_valid():
             serializer.save()
             return Response(serializer.data, status=status.HTTP_200_OK)
+
+@csrf_exempt
+@api_view(['POST'])
+def api_finished_completed_tasks(request, client_uuid):
+    client = Client.objects.get(uuid=client_uuid)
+    if request.method == 'POST':
+        tasks = request.data['tasks']
+        completed_tasks = client.complete_tasks(tasks)
+        return Response({'completed_tasks': completed_tasks}, status=status.HTTP_200_OK)
+
+
+@api_view(['GET'])
+def api_get_info(request, client_uuid):
+    if request.method == 'GET':
+        client = Client.objects.get(uuid=client_uuid)
+        amount_clients = client.get_amount_clients()
+        amount_tasks = client.get_amount_tasks()
+        return Response({'amount_clients': amount_clients, 'amount_tasks': amount_tasks}, status=status.HTTP_200_OK)
 
 
 @api_view(['POST'])

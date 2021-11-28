@@ -12,5 +12,10 @@ class ClientAdmin(admin.ModelAdmin):
     list_display = ('hash', 'password', 'priority', 'status', 'date_create', 'date_update', 'date_finished')
 
 
-admin.site.register(Task)
+@admin.register(Task)
+class ClientAdmin(admin.ModelAdmin):
+    list_display = ('hash_id', 'static_string', 'status')
+
+
+# admin.site.register(Task)
 admin.site.register(Work)

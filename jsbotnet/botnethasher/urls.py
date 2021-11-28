@@ -8,10 +8,12 @@ urlpatterns = [
     path('guest/hello', api_new_client),
 
     path('user/all', api_client),
-    path('user/<uuid:client_uuid>/get-hash', api_check_news),
+    path('user/<uuid:client_uuid>/get-hash', api_get_hash),
     path('user/<uuid:client_uuid>/detail', api_client_detail),
     path('user/<uuid:client_uuid>/get-tasks/<int:amount_tasks>', api_get_tasks),
     path('user/<uuid:client_uuid>/check-health', api_check_health),
+    path('user/<uuid:client_uuid>/finished-completed-tasks', api_finished_completed_tasks),
+    path('user/<uuid:client_uuid>/get-info', api_get_info),
 
     path('tg-bot/add-hash', api_tg_add_hash),
     path('tg-bot/get-info', api_tg_get_info),

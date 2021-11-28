@@ -17,7 +17,7 @@ class HashSerializer(serializers.ModelSerializer):
 class TaskSerializer(serializers.ModelSerializer):
     class Meta:
         model = Task
-        fields = ('static_string')
+        fields = ('static_string',)
 
 
 class ClientGeneralInfoSerializer(serializers.ModelSerializer):
